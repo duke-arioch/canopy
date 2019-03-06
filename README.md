@@ -14,7 +14,7 @@ Any received structure grow event triggers search for applicable recipes.
 
 Each recipe is assocated with a strategy, which tells Canopy which tree construction framework to invoke and passes it a string array of arguments.
 
-###SCHEMATIC Strategy
+### SCHEMATIC Strategy
 
 If WorldEdit is loaded and a recipe calling for the SCHEMATIC strategy is invoked, the argument list represents regexes for pattern matching the schematics files.  
 
