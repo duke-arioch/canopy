@@ -2,7 +2,7 @@
 
 Grow custom trees on your Spigot server. Designed to work with Realistic Biomes. Soft dependency on WorldEdit for schematics rendering.
  
-Some aspects borrowed from [OwnGarden][https://github.com/Skyost/OwnGarden]
+Some aspects borrowed from [OwnGarden](https://github.com/Skyost/OwnGarden)
 
 ## Concepts
 ### Recipes
