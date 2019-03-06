@@ -20,6 +20,9 @@ If WorldEdit is loaded and a recipe calling for the SCHEMATIC strategy is invoke
 
 For example, birch/small/Birch[24] will match either birch/small/Birch2 or birch/small/Birch4 schematic file. When more than one match is found, a match is selected randomly.
 
+### PROCEDURAL Strategy
+
+If someone wants to contribute this I am not averse to the idea. Something along the lines of the [Terasology/GrowingFlora](https://github.com/Terasology/GrowingFlora)
 
 ## Configuration File Example
 ```yaml
