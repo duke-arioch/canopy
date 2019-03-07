@@ -22,11 +22,8 @@ import org.bukkit.Material;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.plugin.Plugin;
 import org.sandcast.canopy.config.Recipe;
-import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,7 +44,6 @@ public class WorldEditOperations {
     public WorldEditOperations(final File zipFile, String schematicsDirectory) {
         this.zipFile = zipFile;
         this.schematicsDirectory = schematicsDirectory;
-        loadSchematics();
     }
 
     public static boolean checkWorldEditVersion() {
@@ -140,46 +136,6 @@ public class WorldEditOperations {
         return false;
     }
 
-    public Set<String> getTrees() {
-        return trees;
-    }
-
-    private void extractSamples(final File schematicsDirectory) {
-        log("schematics directory is " + schematicsDirectory.getAbsolutePath());
-        ZipUtil.unpack(zipFile, schematicsDirectory, name -> name.startsWith("schematics/") ? name.replaceFirst("schematics/", "") : null);
-    }
-
-    public void loadSchematics() {
-        final File schematicsDirectoryFile = new File(schematicsDirectory);
-        if (!schematicsDirectoryFile.exists() || !schematicsDirectoryFile.isDirectory()) {
-            schematicsDirectoryFile.mkdirs();
-        }
-        if ((schematicsDirectoryFile.list()).length == 0) {
-            log("Extracting samples schematics...");
-            extractSamples(schematicsDirectoryFile);
-        }
-        try {
-            Files.walk(Paths.get(schematicsDirectory))
-                    .filter(f -> Files.isRegularFile(f) && f.toString().endsWith(".schematic"))
-                    .forEach(f -> {
-                        String value = f.toString().replace("\\", "/");
-//                        log("Plugin storing schematic " + value);
-                        trees.add(value);
-                    });
-        } catch (IOException ioe) {
-            log("error trying to read schematics files");
-        }
-//        for (File treeType : treeTypes) {
-//            final File[] treeSizes = treeType.listFiles();
-//            for (File size : treeSizes) {
-//                final File[] schematics = size.listFiles((dir, name) -> name.endsWith("schematic"));
-//                for (File schematic : schematics) {
-//                    log("loaded schematic " + schematic.getAbsolutePath() + " " + "type:" + treeType.getName() + " " + "size:" + size.getName());
-//                    trees.add(schematic.getAbsolutePath());
-//                }
-//            }
-//        }
-    }
 
     /**
      * Checks if a there is no floor above the tree.
@@ -251,6 +207,10 @@ public class WorldEditOperations {
                 }
             }
         });
+    }
+
+    public Set<String> getTrees() {
+        return trees;
     }
 
     private void log(String message) {

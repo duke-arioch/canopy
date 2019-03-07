@@ -1,12 +1,17 @@
 package org.sandcast.canopy.config;
 
 import be.seeseemelk.mockbukkit.MockBukkit;
+import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.WorldMock;
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.TreeSpecies;
+import org.bukkit.TreeType;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.event.world.StructureGrowEvent;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sandcast.canopy.CanopyPlugin;
@@ -17,41 +22,47 @@ import org.yaml.snakeyaml.nodes.Tag;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class PluginConfigTest {
-    private Server server;
+    private static ServerMock server;
     private CanopyPlugin plugin;
-    private World world;
+    private static WorldMock world;
+
+    @BeforeAll
+    public static void singleSetup() {
+        world = spy(new WorldMock());
+        doReturn(Biome.FOREST).when(world).getBiome(anyInt(), anyInt());
+        doReturn(true).when(world).generateTree(any(Location.class), any(TreeType.class));
+        server = spy(MockBukkit.mock());
+        doReturn(world).when(server).getWorld(anyString());
+        doReturn(world).when(server).getWorld(any(UUID.class));
+        when(server.getWorlds()).thenReturn(Arrays.asList(world));
+
+//        PluginDescriptionFile description = new PluginDescriptionFile("WorldEdit", "6", MockPlugin.class.getName());
+//        JavaPlugin instance = server.getPluginManager().loadPlugin(MockPlugin.class, description);
+//        server.getPluginManager().enablePlugin(instance);
+//        MockPlugin worldEdit = spy(MockBukkit.createMockPlugin());
+//        doReturn("WorldEdit").when(worldEdit).getDescription();
+    }
 
     @BeforeEach
     public void setUp() {
-        world = spy(new WorldMock(Material.DIRT, 10));
-        server = spy(MockBukkit.mock());
+
         plugin = MockBukkit.load(CanopyPlugin.class);
-        doReturn(Biome.FOREST).when(world).getBiome(anyInt(), anyInt());
-        doReturn(true).when(world).generateTree(any(Location.class), any(TreeType.class));
-        when(server.getWorld(world.getName())).thenReturn(world);
-        when(server.getWorld(world.getUID())).thenReturn(world);
-        when(server.getWorlds()).thenReturn(Arrays.asList(world));
-//        MockPlugin worldEdit = spy(MockBukkit.createMockPlugin());
-//        PluginDescriptionFile desc = new PluginDescriptionFile("WorldEdit", "6", null);
-//        doReturn(desc).when(worldEdit).getDescription();
-//        doReturn("WorldEdit").when(worldEdit).getName();
     }
 
-    @AfterEach
-    public void tearDown() {
+    @AfterAll
+    public static void tearDown() {
         MockBukkit.unload();
     }
 

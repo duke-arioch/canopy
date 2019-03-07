@@ -6,7 +6,6 @@ import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.java.JavaPluginLoader;
-import org.sandcast.canopy.command.CanopyCommand;
 import org.sandcast.canopy.config.PluginConfig;
 import org.sandcast.canopy.config.Recipe;
 import org.sandcast.canopy.listener.GlobalEventsListener;
@@ -17,11 +16,14 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.CustomClassLoaderConstructor;
 import org.yaml.snakeyaml.nodes.Tag;
+import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -58,8 +60,9 @@ public class CanopyPlugin extends JavaPlugin {
                         + String.join(", ", WorldEditOperations.WORLDEDIT_VERSIONS) + ".");
             }
             worldEditOperations = new WorldEditOperations(getFile(), config.getSchematicsDirectory());
+            loadSchematics();
             Bukkit.getPluginManager().registerEvents(new GlobalEventsListener(this), this);
-            getCommand("canopy").setExecutor(new CanopyCommand());
+//            getCommand("canopy").setExecutor(new CanopyCommand());
             final PluginDescriptionFile description = getDescription();
             getLogger().info("Enabled " + ChatColor.GREEN + getName() + " v" + description.getVersion() + ChatColor.GOLD + " by "
                     + String.join(" ", description.getAuthors()) + ChatColor.RESET + " !");
@@ -117,10 +120,10 @@ public class CanopyPlugin extends JavaPlugin {
                     Recipe.Builder.Strategy strategy = recipe.getBuilder().getStrategy();
                     switch (strategy) {
                         case SCHEMATIC:
-                            if (worldEditOperations.growTree(event, recipe)) {
+                            if (WorldEditOperations.checkWorldEditVersion() && worldEditOperations.growTree(event, recipe)) {
                                 getLogger().info("Schematic tree grew successfully");
                             } else {
-                                getLogger().warning("Schematic tree did not grow!");
+                                getLogger().warning("Unable to grow SCHEMATIC tree.");
                             }
                             break;
                         case PROCEDURAL:
@@ -145,6 +148,7 @@ public class CanopyPlugin extends JavaPlugin {
             }
         }
     }
+
     public PluginConfig getPluginConfig() {
         return config;
     }
@@ -211,4 +215,36 @@ public class CanopyPlugin extends JavaPlugin {
         getLogger().info("Canopy Plugin configuration loaded");
         return config;
     }
+
+//    getFile(), config.getSchematicsDirectory()
+
+    private void extractSamples() {
+        File schematicsDirectory = new File(config.getSchematicsDirectory());
+        getLogger().info("schematics directory is " + schematicsDirectory.getAbsolutePath());
+        ZipUtil.unpack(getFile(), schematicsDirectory);
+//                , name -> name.startsWith("schematics/") ? name.replaceFirst("schematics/", "") : null);
+    }
+
+    public void loadSchematics() {
+        final File schematicsDirectoryFile = new File(config.getSchematicsDirectory());
+        if (!schematicsDirectoryFile.exists() || !schematicsDirectoryFile.isDirectory()) {
+            schematicsDirectoryFile.mkdirs();
+        }
+        if ((schematicsDirectoryFile.list()).length == 0) {
+            getLogger().info("Extracting samples schematics...");
+            extractSamples();
+        }
+        try {
+            Files.walk(Paths.get(config.getSchematicsDirectory()))
+                    .filter(f -> Files.isRegularFile(f) && f.toString().endsWith(".schematic"))
+                    .forEach(f -> {
+                        String value = f.toString().replace("\\", "/");
+//                        log("Plugin storing schematic " + value);
+                        worldEditOperations.getTrees().add(value);
+                    });
+        } catch (IOException ioe) {
+            getLogger().info("error trying to read schematics files");
+        }
+    }
+
 }
