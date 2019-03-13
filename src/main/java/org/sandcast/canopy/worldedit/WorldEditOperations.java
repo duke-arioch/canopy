@@ -21,10 +21,12 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.plugin.Plugin;
+import org.sandcast.canopy.CanopyPlugin;
 import org.sandcast.canopy.config.Recipe;
 
 import java.io.*;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -40,10 +42,12 @@ public class WorldEditOperations {
     private final File zipFile;
     private final String schematicsDirectory;
     private final Set<String> trees = new HashSet<>();
+    private CanopyPlugin plugin;
 
-    public WorldEditOperations(final File zipFile, String schematicsDirectory) {
+    public WorldEditOperations(CanopyPlugin plugin, File zipFile, String schematicsDirectory) {
         this.zipFile = zipFile;
         this.schematicsDirectory = schematicsDirectory;
+        this.plugin = plugin;
     }
 
     public static boolean checkWorldEditVersion() {
@@ -90,18 +94,18 @@ public class WorldEditOperations {
                     .filter(tree -> matcher.reset(tree).find())
                     .collect(Collectors.toList());
             if (possibleSchematics.isEmpty()) {
-                System.out.println("found no matching schematic for " + arg);
+                plugin.getLogger().info("found no matching schematic for " + arg);
             } else {
                 String tree = possibleSchematics.get(new Random().nextInt(possibleSchematics.size()));
-                System.out.println("found matching schematic for " + arg + ": " + tree);
+                plugin.getLogger().info("found matching schematic for " + arg + ": " + tree);
                 Location location = event.getLocation();
                 try {
                     final ClipboardHolder holder = loadSchematic((tree), location);
-                    System.out.println("random rotation setting is: " + recipe.getRandomRotation());
+                    plugin.getLogger().info("random rotation setting is: " + recipe.getRandomRotation());
 
                     if (recipe.getRandomRotation()) {
                         final int degrees = new Random().nextInt(4) * 90;
-                        System.out.println("random rotation was: " + degrees);
+                        plugin.getLogger().info("random rotation was: " + degrees);
                         if (degrees != 0) {
                             final AffineTransform transform = new AffineTransform();
                             transform.rotateY(degrees);
@@ -128,8 +132,7 @@ public class WorldEditOperations {
                     session.flushQueue();
                     return true;
                 } catch (final Exception ex) {
-                    Bukkit.getConsoleSender().sendMessage("Unable to load the schematic : \"" + tree + "\".");
-                    ex.printStackTrace();
+                    plugin.getLogger().log(Level.SEVERE, "Unable to load the schematic : \"" + tree + "\".", ex);
                 }
             }
         }
@@ -185,8 +188,6 @@ public class WorldEditOperations {
         } else {
             retval = new Vector(0, 0, 0);
         }
-        Bukkit.getConsoleSender().sendMessage("got:" + retval.toString());
-        Bukkit.getConsoleSender().sendMessage("and:" + xtot + ":" + ztot + ":" + count);
         return retval;
     }
 
@@ -203,7 +204,7 @@ public class WorldEditOperations {
                 try {
                     clipboard.setBlock(blockVector, new BaseBlock(BlockID.AIR));
                 } catch (Exception e) {
-                    Bukkit.getConsoleSender().sendMessage("Failed to set block due to " + e.getMessage());
+                    plugin.getLogger().warning("Failed to set block due to " + e.getMessage());
                 }
             }
         });

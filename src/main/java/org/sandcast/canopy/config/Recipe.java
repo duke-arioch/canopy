@@ -9,9 +9,18 @@ public class Recipe  {
     private List<String> biomes;
     private Builder builder;
     private Boolean randomRotation = true;
+    private String name;
 
     public Boolean getRandomRotation() {
         return randomRotation;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setRandomRotation(Boolean randomRotation) {

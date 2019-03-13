@@ -42,13 +42,13 @@ abstract public class Matrix<T> {
         return matrix;
     }
 
-    public Matrix<T> view(Function<T, T> transformation) {
+    public <S> Matrix<S> view(Function<T, S> transformation) {
 
-        Matrix matrix = new Matrix<T>() {
+        Matrix matrix = new Matrix<S>() {
             Matrix<T> inner = Matrix.this;
 
             @Override
-            public T get(int x, int y) {
+            public S get(int x, int y) {
                 return transformation.apply(inner.get(x, y));
             }
 
@@ -86,6 +86,7 @@ abstract public class Matrix<T> {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
+        builder.append("\n");
         for (int x = 0; x < size(); x++) {
             for (int y = 0; y < size(); y++) {
                 builder.append("[")

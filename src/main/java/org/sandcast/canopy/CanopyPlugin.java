@@ -16,18 +16,19 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.CustomClassLoaderConstructor;
 import org.yaml.snakeyaml.nodes.Tag;
-import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 
 /**
@@ -59,7 +60,7 @@ public class CanopyPlugin extends JavaPlugin {
                 getLogger().warning("Incorrect WorldEdit version. Current accepted ones are : "
                         + String.join(", ", WorldEditOperations.WORLDEDIT_VERSIONS) + ".");
             }
-            worldEditOperations = new WorldEditOperations(getFile(), config.getSchematicsDirectory());
+            worldEditOperations = new WorldEditOperations(this, getFile(), config.getSchematicsDirectory());
             loadSchematics();
             Bukkit.getPluginManager().registerEvents(new GlobalEventsListener(this), this);
 //            getCommand("canopy").setExecutor(new CanopyCommand());
@@ -99,15 +100,24 @@ public class CanopyPlugin extends JavaPlugin {
 
 
     public void growTree(StructureGrowEvent event) {
-        Map<String, Recipe> recipes = config.getRecipes();
+        List<Recipe> recipes = config.getRecipes();
+        boolean matchedAny = false;
         //loop through these based upon order in the file. should be a list.
-        for (Recipe recipe : recipes.values()) {
+        for (Recipe recipe : recipes) {
+            getLogger().info("checking pattern against recipe " + recipe.getName());
             String[][] ingredients = getRecipeMatrix(recipe);
             Block[][] worldBlocks = getSourceGrid(recipe, event);
             Matrix<String> ingredientMatrix = Matrix.of(ingredients);
             Matrix<Block> blockMatrix = Matrix.of(worldBlocks);
+            getLogger().info("checking ingredients ");
+//            Matrix<String> blockStrings = blockMatrix.view(block -> "")
+            getLogger().info(ingredientMatrix.toString());
+            getLogger().info("against blocks");
+            getLogger().info(blockMatrix.view(DescriptionUtils::describe).toString());
             boolean recipeMatchesEventArea = blockMatrix.containsRotated(ingredientMatrix, (block, s) -> s.equals(DescriptionUtils.describe(block)));
+            getLogger().info("recipe matched blocks? - " + recipeMatchesEventArea);
             if (recipeMatchesEventArea) {
+                matchedAny = true;
                 int matrixSize = 2 * recipe.getLayout().size() - 1;
                 for (int z = 0; z < matrixSize; z++) {
                     for (int x = 0; x < matrixSize; x++) {
@@ -116,45 +126,51 @@ public class CanopyPlugin extends JavaPlugin {
                             block.setType(Material.AIR);
                         }
                     }
+                }
 //                    boolean biomeMatches = recipe.getBiomes().contains(event.getLocation().getBlock().getBiome().name());
-                    Recipe.Builder.Strategy strategy = recipe.getBuilder().getStrategy();
-                    switch (strategy) {
-                        case SCHEMATIC:
-                            if (WorldEditOperations.checkWorldEditVersion() && worldEditOperations.growTree(event, recipe)) {
-                                getLogger().info("Schematic tree grew successfully");
+                Recipe.Builder.Strategy strategy = recipe.getBuilder().getStrategy();
+                switch (strategy) {
+                    case SCHEMATIC:
+                        if (WorldEditOperations.checkWorldEditVersion() && worldEditOperations.growTree(event, recipe)) {
+                            getLogger().info("schematic tree grew successfully from recipe '" + recipe.getName() + "'.");
+                        } else {
+                            if (WorldEditOperations.checkWorldEditVersion()) {
+                                getLogger().warning("unable to grow SCHEMATIC tree for recipe '" + recipe.getName() + "'.");
                             } else {
-                                getLogger().warning("Unable to grow SCHEMATIC tree.");
+                                getLogger().warning("recipe '" + recipe.getName() + "' matched SCHEMATIC but World Edit is not loaded or not compatible.");
                             }
-                            break;
-                        case PROCEDURAL:
-                            break;
-                        default:
-                    }
+                        }
+                        break;
+                    case PROCEDURAL:
+                        throw new UnsupportedOperationException("procedural builds not yet supported");
+                    default:
                 }
-            } else {
-                getLogger().info("no match so grew a generic tree off of " + event.getSpecies().name());
-                TreeType treeType = event.getSpecies();
-                Block block = event.getLocation().getBlock();
-                if (event.getSpecies() == TreeType.BIG_TREE) {
-                    if (DescriptionUtils.describe(block).equals("BIRCH_SAPLING")) {
-                        treeType = TreeType.TALL_BIRCH;
-                    }
-                    if (DescriptionUtils.describe(block).equals("REDWOOD_SAPLING")) {
-                        treeType = TreeType.MEGA_REDWOOD;
-                    }
-                }
-                block.setType(Material.AIR);
-                event.getLocation().getWorld().generateTree(event.getLocation(), treeType);
+                break;
             }
         }
+        if (!matchedAny) {
+            getLogger().info("no match so grew a generic tree off of " + event.getSpecies().name());
+            TreeType treeType = event.getSpecies();
+            Block block = event.getLocation().getBlock();
+            if (event.getSpecies() == TreeType.BIG_TREE) {
+                if (DescriptionUtils.describe(block).equals("BIRCH_SAPLING")) {
+                    treeType = TreeType.TALL_BIRCH;
+                }
+                if (DescriptionUtils.describe(block).equals("REDWOOD_SAPLING")) {
+                    treeType = TreeType.MEGA_REDWOOD;
+                }
+            }
+            block.setType(Material.AIR);
+            event.getLocation().getWorld().generateTree(event.getLocation(), treeType);
+        }
     }
+
 
     public PluginConfig getPluginConfig() {
         return config;
     }
 
     public PluginConfig load(File dataFolder) throws IOException {
-
         final PluginConfig config;
         Yaml yaml = new Yaml();
         File configFile = new File(dataFolder, "config.yml");
@@ -163,32 +179,7 @@ public class CanopyPlugin extends JavaPlugin {
             if (configFile.createNewFile()) {
                 getLogger().info("new config file created");
                 try (final FileWriter writer = new FileWriter(configFile)) {
-                    Recipe recipe = new Recipe();
-                    List<String> row1 = Arrays.asList("DARK_OAK_SAPLING", "DARK_OAK_SAPLING");
-                    List<String> row2 = Arrays.asList("DARK_OAK_SAPLING", "ACACIA_SAPLING");
-                    recipe.getLayout().add(row1);
-                    recipe.getLayout().add(row2);
-                    recipe.setBiomes(Arrays.asList("FOREST"));
-                    Recipe.Builder builder = new Recipe.Builder();
-                    builder.setArguments(Arrays.asList("birch/small/Birch[2,3]"));
-                    recipe.setBuilder(builder);
-
-                    Recipe recipe2 = new Recipe();
-                    List<String> row21 = Arrays.asList("ACACIA_SAPLING", "DARK_OAK_SAPLING");
-                    List<String> row22 = Arrays.asList("BIRCH_SAPLING", "ACACIA_SAPLING");
-                    recipe2.getLayout().add(row21);
-                    recipe2.getLayout().add(row22);
-                    recipe2.setBiomes(Arrays.asList("FOREST"));
-                    Recipe.Builder builder2 = new Recipe.Builder();
-                    builder2.setArguments(Arrays.asList("JungleLarge[1234]"));
-                    recipe2.setBuilder(builder2);
-
-                    final PluginConfig newConfig = new PluginConfig();
-                    Map<String, Recipe> recipes = new HashMap<>();
-                    recipes.put("chimera", recipe);
-                    recipes.put("chimera2", recipe2);
-                    newConfig.setRecipes(recipes);
-                    newConfig.setSchematicsDirectory("schematics");
+                    final PluginConfig newConfig = getDefaultConfig();
                     String output = yaml.dumpAs(newConfig, Tag.MAP, DumperOptions.FlowStyle.AUTO);
                     writer.write(output);
                     writer.flush();
@@ -201,7 +192,7 @@ public class CanopyPlugin extends JavaPlugin {
             }
         }
 //        try {
-//            getLogger().info("about to try the get config with class thing");
+//            getLogger().info("about to try the get con/fig with class thing");
 //            System.out.println("plugins classloader is " + PluginConfig.class.getClassLoader().getClass().getCanonicalName());
 //            System.out.println("my classloader is " + this.getClassLoader().getClass().getCanonicalName());
 //            Class.forName(PluginConfig.class.getCanonicalName(), false, PluginConfig.class.getClassLoader());
@@ -216,30 +207,77 @@ public class CanopyPlugin extends JavaPlugin {
         return config;
     }
 
-//    getFile(), config.getSchematicsDirectory()
+    public static PluginConfig getDefaultConfig() {
+        Recipe recipe = new Recipe();
+        recipe.setName("Chimera 1");
+        List<String> row1 = Arrays.asList("DARK_OAK_SAPLING", "DARK_OAK_SAPLING");
+        List<String> row2 = Arrays.asList("DARK_OAK_SAPLING", "ACACIA_SAPLING");
+        recipe.getLayout().add(row1);
+        recipe.getLayout().add(row2);
+        recipe.setBiomes(Arrays.asList("FOREST"));
+        Recipe.Builder builder = new Recipe.Builder();
+        builder.setArguments(Arrays.asList("birch/small/Birch[2,3]"));
+        recipe.setBuilder(builder);
 
-    private void extractSamples() {
-        File schematicsDirectory = new File(config.getSchematicsDirectory());
-        getLogger().info("schematics directory is " + schematicsDirectory.getAbsolutePath());
-        ZipUtil.unpack(getFile(), schematicsDirectory);
-//                , name -> name.startsWith("schematics/") ? name.replaceFirst("schematics/", "") : null);
+        Recipe recipe2 = new Recipe();
+        recipe2.setName("Chimera 2");
+        List<String> row21 = Arrays.asList("ACACIA_SAPLING", "DARK_OAK_SAPLING");
+        List<String> row22 = Arrays.asList("BIRCH_SAPLING", "ACACIA_SAPLING");
+        recipe2.getLayout().add(row21);
+        recipe2.getLayout().add(row22);
+        recipe2.setBiomes(Arrays.asList("FOREST"));
+        Recipe.Builder builder2 = new Recipe.Builder();
+        builder2.setArguments(Arrays.asList("JungleLarge[1234]"));
+        recipe2.setBuilder(builder2);
+
+        final PluginConfig newConfig = new PluginConfig();
+        List<Recipe> recipes = new ArrayList<>();
+        recipes.add(recipe);
+        recipes.add(recipe2);
+        newConfig.setRecipes(recipes);
+        newConfig.setSchematicsDirectory("schematics");
+        return newConfig;
+    }
+
+
+    private void extractSamples(File destination) {
+        try {
+            JarFile jar = new JarFile(getFile());
+            jar.stream()
+                    .filter(jarEntry -> jarEntry.getName().startsWith("schematics") || jarEntry.getName().endsWith("schematic"))
+                    .forEach(jarEntry -> {
+                        Path file = new File(destination, jarEntry.getName()).toPath();
+                        try {
+                            if (jarEntry.isDirectory()) {
+                                Files.createDirectories(file);
+                            } else {
+                                Files.copy(jar.getInputStream(jarEntry), file, StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        } catch (IOException ioe) {
+                            getLogger().log(Level.SEVERE, "unable to extract samples due to " + ioe.getMessage(), ioe);
+                        }
+                    });
+        } catch (IOException ioe) {
+            getLogger().log(Level.SEVERE, "unable to extract samples due to " + ioe.getMessage(), ioe);
+        }
     }
 
     public void loadSchematics() {
-        final File schematicsDirectoryFile = new File(config.getSchematicsDirectory());
+        getLogger().info("trying to load schematics from " + getDataFolder());
+        final File schematicsDirectoryFile = new File(getDataFolder(), config.getSchematicsDirectory());
         if (!schematicsDirectoryFile.exists() || !schematicsDirectoryFile.isDirectory()) {
+            getLogger().info("initializing schematics directory " + schematicsDirectoryFile.getAbsolutePath());
             schematicsDirectoryFile.mkdirs();
-        }
-        if ((schematicsDirectoryFile.list()).length == 0) {
-            getLogger().info("Extracting samples schematics...");
-            extractSamples();
+            if (getFile() != null) {
+                extractSamples(getDataFolder());
+            }
         }
         try {
-            Files.walk(Paths.get(config.getSchematicsDirectory()))
+            Files.walk(Paths.get(schematicsDirectoryFile.getAbsolutePath()))
                     .filter(f -> Files.isRegularFile(f) && f.toString().endsWith(".schematic"))
                     .forEach(f -> {
                         String value = f.toString().replace("\\", "/");
-//                        log("Plugin storing schematic " + value);
+                        getLogger().info("reading schematic file " + value);
                         worldEditOperations.getTrees().add(value);
                     });
         } catch (IOException ioe) {

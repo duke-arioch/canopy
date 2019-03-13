@@ -69,11 +69,12 @@ public class PluginConfigTest {
     @Test
     void testYamlSaveLoad() {
         Yaml yaml = new Yaml();
-        PluginConfig config = getConfig();
+        PluginConfig config = CanopyPlugin.getDefaultConfig();
         String output = yaml.dumpAs(config, Tag.MAP, DumperOptions.FlowStyle.AUTO);
+        System.out.println(output);
         PluginConfig config2;
         config2 = yaml.loadAs(output, PluginConfig.class);
-        Recipe r = config2.getRecipes().get("chimera");
+        Recipe r = config2.getRecipes().get(0);
         assertThat(r.getBuilder().getStrategy().name(), is("SCHEMATIC"));
     }
 
@@ -130,26 +131,4 @@ public class PluginConfigTest {
         System.out.println(transformed.toString());
         System.out.println("containsRotated recipe: " + strings.containsRotated((Matrix<String>) Matrix.of(dest), (s, t) -> s.equals(t)));
     }
-
-    private PluginConfig getConfig() {
-        Recipe recipe = new Recipe();
-        List<String> row1 = Arrays.asList("DARK_OAK", "DARK_OAK", "DARK_OAK");
-        List<String> row2 = Arrays.asList("DARK_OAK", "DARK_OAK", "DARK_OAK");
-        List<String> row3 = Arrays.asList("DARK_OAK", "DARK_OAK", "DARK_OAK");
-        recipe.getLayout().add(row1);
-        recipe.getLayout().add(row2);
-        recipe.getLayout().add(row3);
-        recipe.setBiomes(Arrays.asList("FOREST"));
-        Recipe.Builder builder = new Recipe.Builder();
-        builder.setArguments(Arrays.asList("dark_oak", "birch/small"));
-        recipe.setBuilder(builder);
-        PluginConfig config = new PluginConfig();
-
-        Map<String, Recipe> recipes = new HashMap<>();
-        recipes.put("chimera", recipe);
-        config.setRecipes(recipes);
-        config.setSchematicsDirectory("schematics");
-        return config;
-    }
-
 }

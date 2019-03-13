@@ -1,6 +1,6 @@
 package org.sandcast.canopy.config;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * The plugin configuration.
@@ -8,15 +8,15 @@ import java.util.Map;
 
 public class PluginConfig {
 
-    private Map<String, Recipe> recipes;
+    private List<Recipe> recipes;
 
     private String schematicsDirectory = "schematics";
 
-    public Map<String, Recipe> getRecipes() {
+    public List<Recipe> getRecipes() {
         return recipes;
     }
 
-    public void setRecipes(Map<String, Recipe> recipes) {
+    public void setRecipes(List<Recipe> recipes) {
         this.recipes = recipes;
     }
 

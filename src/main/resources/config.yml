@@ -1,0 +1,20 @@
+recipes:
+  - biomes: [FOREST]
+    builder:
+      arguments: ['birch/small/Birch[2,3]']
+      strategy: SCHEMATIC
+    layout:
+      - [DARK_OAK_SAPLING, DARK_OAK_SAPLING]
+      - [DARK_OAK_SAPLING, ACACIA_SAPLING]
+    name: Chimera 1
+    randomRotation: true
+  - biomes: [FOREST]
+    builder:
+      arguments: ['JungleLarge[1234]']
+      strategy: SCHEMATIC
+    layout:
+      - [ACACIA_SAPLING, DARK_OAK_SAPLING]
+      - [BIRCH_SAPLING, ACACIA_SAPLING]
+    name: Chimera 2
+    randomRotation: true
+schematicsDirectory: schematics

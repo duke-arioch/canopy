@@ -37,7 +37,7 @@ test {
 shadowJar {
     destinationDir = new File(rootProject.projectDir, 'build/release/')
     mergeServiceFiles()
-    from('src/main/res') {
+    from('src/main/resources') {
         into('/')
     }
 }
