@@ -27,23 +27,23 @@ If someone wants to contribute this I am not averse to the idea. Something along
 ## Configuration File Example
 ```yaml
 recipes:
-  chimera:
-    biomes: [FOREST]
-    builder:
-      arguments: ['birch/small/Birch[2,3]']
-      strategy: SCHEMATIC
-    layout:
-    - [DARK_OAK_SAPLING, DARK_OAK_SAPLING]
-    - [DARK_OAK_SAPLING, ACACIA_SAPLING]
-    randomRotation: true
-  chimera2:
-    biomes: [FOREST]
-    builder:
-      arguments: ['JungleLarge[1234]']
-      strategy: SCHEMATIC
-    layout:
-    - [ACACIA_SAPLING, DARK_OAK_SAPLING]
-    - [BIRCH_SAPLING, ACACIA_SAPLING]
-    randomRotation: true
+- biomes: [FOREST]
+  builder:
+    arguments: ['birch/small/Birch[2,3]']
+    strategy: SCHEMATIC
+  layout:
+  - [DARK_OAK_SAPLING, DARK_OAK_SAPLING]
+  - [DARK_OAK_SAPLING, ACACIA_SAPLING]
+  name: Chimera 1
+  randomRotation: true
+- biomes: [FOREST]
+  builder:
+    arguments: ['JungleLarge[1234]']
+    strategy: SCHEMATIC
+  layout:
+  - [ACACIA_SAPLING, DARK_OAK_SAPLING]
+  - [BIRCH_SAPLING, ACACIA_SAPLING]
+  name: Chimera 2
+  randomRotation: true
 schematicsDirectory: schematics
 ```
