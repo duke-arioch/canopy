@@ -1,8 +1,12 @@
 language: java
 install: true
-
 jdk:
-  - oraclejdk8
-
-script:
-  ./gradlew test shadowJar
+- oraclejdk8
+script: "./gradlew test shadowJar"
+deploy:
+  provider: releases
+  api_key:
+    secure: YHRcmltcQaMcumbfzzbG7HakN08bJmKq5Wk7J+N5rjmUYaq7y8ZlrhryG/lAUjWaxnTBFNvQBOyuW+keS8Qi5deiYx4HPBSjo2F+3hQdRp5sxKvBGiQyoqKeMUkBe+sd3jKxyGmtiP0JUfsdliyioJ9SFDdh1Uu0m/o8gs31iwKXbAGoudVMz92mDfopFYNwPH2O7gD4+JVlTdjjhDNUBcS9SmDOntxm+JkUw/YddmxBBTq+Uda52Z24SaOJLiZtAktPSLpL1oQRVMdnGoV3ewqrQ+9rmj+YmEwkC5Yz8ryipvhUTF83TjMANJFag8Fi/qsj4+a+5UMa9W2AghUnQ9hk07yCzBVDsh7LMaDkNqhhNNeFWvN54XfCpVYpmK2J4Lz2BdBDq/iptQ1whEVCkG7HIz6KARBW53s+xB2TuA5UL2ufycpsaaVtS5te26/n8EYyDjd0Nzk/79Pb350049NUFRF4Yvmv+LRal3Z4FeHcw9T0XjeMIcCezJgZF97ma3WxSTgV20oYWpViCkAmH/zrXhEg6vegQw4H5/si9n/d/8JUOKdiPkEiRX1YPH5McpQsm52l5Ns2Hogcd7Fa5cihNTRLmejRcap32iTlvwCz9eo70oZ8qVzbJ+4axoN5EYmjv4gW/XndjGrM159IN/cJGaW+alQI1wHTzQNkSjs=
+  file: build/release/canopy-1.0.jar
+  on:
+    repo: sandcast/canopy

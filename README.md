@@ -1,4 +1,5 @@
 # Canopy Spigot Plugin
+![build](https://travis-ci.org/sandcast/canopy.svg?branch=master)
 
 Grow custom trees on your Spigot server. Designed to work with Realistic Biomes. Soft dependency on WorldEdit for schematics rendering.
  
