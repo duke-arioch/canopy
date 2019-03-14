@@ -5,4 +5,4 @@ jdk:
   - oraclejdk8
 
 script:
-  gradle test shadowJar
+  gradlew test shadowJar
