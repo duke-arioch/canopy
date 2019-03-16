@@ -10,6 +10,4 @@ deploy:
   file: build/release/canopy-1.0.jar
   on:
     repo: sandcast/canopy
-    branches:   
-      only:
-        - master
+    tags: true
